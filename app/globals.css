@@ -24,3 +24,44 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.commit-intensity-slider {
+  appearance: none;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #ebedf0,
+    #9be9a8 25%,
+    #40c463 50%,
+    #30a14e 75%,
+    #216e39
+  );
+  cursor: pointer;
+}
+
+.commit-intensity-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #14532d;
+  box-shadow:
+    0 0 0 1px #166534,
+    0 2px 4px #0002;
+}
+
+.commit-intensity-slider::-moz-range-thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #14532d;
+  box-shadow: 0 0 0 1px #166534;
+}
+
+.commit-intensity-slider:focus-visible {
+  outline: 2px solid #166534;
+  outline-offset: 6px;
+}

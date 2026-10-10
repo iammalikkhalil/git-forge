@@ -1,13 +1,17 @@
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
-import { calendarSchema, generateCommitCalendar } from "@/lib/commit-calendar";
+import {
+  calendarSchema,
+  generateCommitCalendar,
+  CalendarCapacityError,
+} from "@/lib/commit-calendar";
 
 const reply = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin)
-    return reply({ message: "This request must come from Git Forge." }, 403);
+    return reply({ message: "This request must come from GitHubKit." }, 403);
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -31,11 +35,13 @@ export async function POST(request: NextRequest) {
     );
   try {
     return reply({ calendar: generateCommitCalendar(parsed.data) });
-  } catch {
+  } catch (error) {
     return reply(
       {
         message:
-          "No eligible dates for these habits. Adjust the date range or weekday/weekend scores.",
+          error instanceof CalendarCapacityError
+            ? error.message
+            : "No eligible dates for these habits. Adjust the date range or weekday/weekend scores.",
       },
       422,
     );

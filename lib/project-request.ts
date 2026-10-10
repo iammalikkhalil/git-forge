@@ -18,7 +18,7 @@ export async function handleProjectRequest(
   checkOnly = false,
 ) {
   if (request.headers.get("origin") !== request.nextUrl.origin) {
-    return reply({ message: "This request must come from Git Forge." }, 403);
+    return reply({ message: "This request must come from GitHubKit." }, 403);
   }
   const token = await getToken({
     req: request,

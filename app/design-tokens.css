@@ -1,0 +1,40 @@
+/* Shared visual tokens for public pages and the connected workspace. */
+:is(.workspace, .landing) {
+  --ws-bg: #0c1013;
+  --ws-header: #0f1418;
+  --ws-surface: #12191e;
+  --ws-surface-raised: #1a232b;
+  --ws-input: #10161b;
+  --ws-border: #29343d;
+  --ws-border-hover: #46545f;
+  --ws-text: #f3f5f7;
+  --ws-text-secondary: #bdc7d2;
+  --ws-text-muted: #95a3b1;
+  --ws-accent: #32df69;
+  --ws-accent-hover: #24c859;
+  --ws-on-accent: #07150b;
+  --ws-success: #32df69;
+  --ws-warning: #f6bd4f;
+  --ws-error: #ff8a8a;
+  --ws-info: #85baff;
+  --ws-focus: #65ed91;
+  --ws-activity-0: #29323b;
+  --ws-activity-1: #204d35;
+  --ws-activity-2: #287b43;
+  --ws-activity-3: #34b954;
+  --ws-activity-4: #44e56e;
+  --ws-space-1: 4px;
+  --ws-space-2: 8px;
+  --ws-space-3: 12px;
+  --ws-space-4: 16px;
+  --ws-space-5: 24px;
+  --ws-space-6: 32px;
+  --ws-space-7: 48px;
+  --ws-radius: 8px;
+  --ws-radius-small: 5px;
+  --ws-control-height: 42px;
+  --ws-content-width: 1200px;
+  --ws-font-body: 15px;
+  --ws-font-small: 13px;
+  --ws-font-title: clamp(30px, 3.4vw, 42px);
+}

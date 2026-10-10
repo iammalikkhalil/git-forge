@@ -7,12 +7,12 @@ export const authOptions: NextAuthOptions = {
     GitHubProvider({
       clientId: process.env.GITHUB_ID ?? "",
       clientSecret: process.env.GITHUB_SECRET ?? "",
-      authorization: { params: { scope: "read:user user:email repo" } },
+      authorization: { params: { scope: "user repo" } },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
-  pages: { signIn: "/login", error: "/login" },
+  pages: { signIn: "/", error: "/" },
   callbacks: {
     async jwt({ token, account }) {
       if (account?.provider === "github")

@@ -15,7 +15,7 @@ const reply = (message: string, status: number) =>
 
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin)
-    return reply("This request must come from Git Forge.", 403);
+    return reply("This request must come from GitHubKit.", 403);
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,

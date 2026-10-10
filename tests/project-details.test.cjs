@@ -318,6 +318,62 @@ test("DST and extreme offsets retain local dates and never schedule after snapsh
     }
   }
 });
+test("daily capacity holds after timezone resolution across seeds and overnight habits", () => {
+  for (const timeZone of [
+    "Asia/Karachi",
+    "America/New_York",
+    "Pacific/Kiritimati",
+  ]) {
+    for (let seed = 0; seed < 8; seed++) {
+      const input = {
+        ...calendarInput,
+        timeZone,
+        seed: `daily-cap-${seed}`,
+        annualCommits: 1000,
+        habits: {
+          ...valid.habits,
+          weekdayActivity: 0,
+          weekendProjects: 10,
+          nightOwl: 10,
+          milestoneBursts: 10,
+          projectBreaks: 10,
+        },
+      };
+      const result = calendarModule.generateCommitCalendar(input);
+      const actual = new Map();
+      for (const instant of result.commits) {
+        const date = Temporal.Instant.from(instant)
+          .toZonedDateTimeISO(timeZone)
+          .toPlainDate();
+        assert(date.dayOfWeek >= 6);
+        const key = date.toString();
+        actual.set(key, (actual.get(key) ?? 0) + 1);
+      }
+      assert.equal(result.commits.length, result.total);
+      assert.equal(
+        result.days.reduce((sum, day) => sum + day.count, 0),
+        result.total,
+      );
+      assert([...actual.values()].every((count) => count <= 10));
+      assert(result.days.every((day) => day.count <= 10));
+    }
+  }
+});
+
+test("insufficient eligible daily capacity reports the requested total and capacity", () => {
+  assert.throws(
+    () =>
+      calendarModule.generateCommitCalendar({
+        ...calendarInput,
+        startDate: "2025-01-06",
+        endDate: "2025-01-15",
+        annualCommits: 1000,
+        habits: { ...valid.habits, weekdayActivity: 0, weekendProjects: 10 },
+      }),
+    /needs 27 commits.*only 20.*maximum of 10/,
+  );
+});
+
 test("generation endpoint enforces origin, authentication and validates before generation", async () => {
   let token = null;
   const { POST } = load("app/api/generate-commits/route.ts", {
@@ -352,4 +408,15 @@ test("generation endpoint enforces origin, authentication and validates before g
   assert.equal(response.status, 200);
   const data = await response.json();
   assert.equal(data.calendar.commits.length, data.calendar.total);
+  const limited = await POST(
+    request({
+      ...calendarInput,
+      startDate: "2025-01-06",
+      endDate: "2025-01-15",
+      annualCommits: 1000,
+      habits: { ...valid.habits, weekdayActivity: 0, weekendProjects: 10 },
+    }),
+  );
+  assert.equal(limited.status, 422);
+  assert.match((await limited.json()).message, /maximum of 10/);
 });

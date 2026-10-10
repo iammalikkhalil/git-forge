@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 24 24" fill="none" stroke="#32df69" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <title>GitHubKit logo</title>
+  <circle cx="6" cy="4" r="2.5"/>
+  <circle cx="6" cy="20" r="2.5"/>
+  <circle cx="18" cy="7" r="2.5"/>
+  <path d="M6 6.5v11M6 14h4a8 8 0 0 0 8-4.5"/>
+</svg>

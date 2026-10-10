@@ -2,6 +2,9 @@ import { Temporal } from "@js-temporal/polyfill";
 import { z } from "zod";
 import { projectSchema } from "@/lib/project-schema";
 
+export const MAX_COMMITS_PER_DAY = 10;
+export class CalendarCapacityError extends Error {}
+
 export const calendarSchema = projectSchema.safeExtend({
   seed: z.string().trim().min(1).max(100),
   asOf: z.iso
@@ -88,22 +91,31 @@ export function generateCommitCalendar(input: CalendarInput): CommitCalendar {
       );
     candidate.weight = candidate.eligible;
   }
-  const cumulative: number[] = [];
-  let weightSum = 0;
-  for (const entry of entries) {
-    weightSum += entry.weight;
-    cumulative.push(weightSum);
-  }
+  const capacity =
+    entries.filter((day) => day.eligible > 0).length * MAX_COMMITS_PER_DAY;
+  if (total > capacity)
+    throw new CalendarCapacityError(
+      `This schedule needs ${total} commits, but the eligible dates can hold only ${capacity} at a maximum of ${MAX_COMMITS_PER_DAY} per day. Extend the date range or adjust your activity habits.`,
+    );
   for (let commit = 0; commit < total; commit++) {
-    const target = random() * weightSum;
-    let low = 0,
-      high = entries.length - 1;
-    while (low < high) {
-      const middle = (low + high) >>> 1;
-      if (cumulative[middle] <= target) low = middle + 1;
-      else high = middle;
+    let available = entries.filter(
+      (day) => day.weight > 0 && day.count < MAX_COMMITS_PER_DAY,
+    );
+    if (!available.length) {
+      // Preserve preferred active days first, then use quiet eligible days.
+      available = entries.filter(
+        (day) => day.eligible > 0 && day.count < MAX_COMMITS_PER_DAY,
+      );
+      for (const day of available) day.weight = day.eligible;
     }
-    entries[low].count++;
+    const weightSum = available.reduce((sum, day) => sum + day.weight, 0);
+    let target = random() * weightSum;
+    const chosen =
+      available.find((day) => {
+        target -= day.weight;
+        return target < 0;
+      }) ?? available[available.length - 1];
+    chosen.count++;
   }
 
   const commits: string[] = [];
@@ -127,18 +139,11 @@ export function generateCommitCalendar(input: CalendarInput): CommitCalendar {
       const window = windows[Math.floor(random() * windows.length)];
       const taskEnd = random() < habits.taskBasedCommits / 10;
       const position = taskEnd ? 0.7 + random() * 0.3 : random();
-      const mayCrossMidnight =
-        (entries[dayIndex + 1]?.weight ?? 0) > 0 &&
-        random() < habits.nightOwl / 10;
-      const duration = mayCrossMidnight
-        ? window.duration
-        : Math.min(window.duration, 86399 - window.start);
-      let seconds = Math.floor(window.start + duration * position);
-      let commitDate = entry.date;
-      if (seconds >= 86400) {
-        commitDate = commitDate.add({ days: 1 });
-        seconds -= 86400;
-      }
+      // Keep each session on its allocated local date; early-morning sessions
+      // still model night-owl activity without overflowing the next day's cap.
+      const duration = Math.min(window.duration, 86399 - window.start);
+      const seconds = Math.floor(window.start + duration * position);
+      const commitDate = entry.date;
       const time = Temporal.PlainTime.from({
         hour: Math.floor(seconds / 3600),
         minute: Math.floor(seconds / 60) % 60,
@@ -147,11 +152,22 @@ export function generateCommitCalendar(input: CalendarInput): CommitCalendar {
       let instant = commitDate
         .toZonedDateTime({ timeZone, plainTime: time })
         .toInstant();
-      if (Temporal.Instant.compare(instant, cutoff) > 0) {
+      if (
+        Temporal.Instant.compare(instant, cutoff) > 0 ||
+        !instant.toZonedDateTimeISO(timeZone).toPlainDate().equals(commitDate)
+      ) {
         // Redistribute today's session within elapsed local-day time, never the future.
         const midnight = commitDate.toZonedDateTime(timeZone).toInstant();
+        const nextMidnight = commitDate
+          .add({ days: 1 })
+          .toZonedDateTime(timeZone)
+          .toInstant();
+        const end =
+          Temporal.Instant.compare(cutoff, nextMidnight) < 0
+            ? cutoff
+            : nextMidnight;
         const elapsed = Number(
-          cutoff.epochMilliseconds - midnight.epochMilliseconds,
+          end.epochMilliseconds - midnight.epochMilliseconds,
         );
         instant = midnight.add({
           milliseconds: Math.floor(random() * elapsed),
@@ -174,6 +190,11 @@ export function generateCommitCalendar(input: CalendarInput): CommitCalendar {
     date: date.toString(),
     count: counts.get(date.toString()) ?? 0,
   }));
+  if (
+    days.some((day) => day.count > MAX_COMMITS_PER_DAY) ||
+    days.reduce((sum, day) => sum + day.count, 0) !== total
+  )
+    throw new Error("Generated calendar failed daily capacity verification.");
   return {
     seed,
     asOf,

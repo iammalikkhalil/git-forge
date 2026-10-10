@@ -1,15 +1,21 @@
 "use client";
 import { useState } from "react";
 import { signIn, signOut } from "next-auth/react";
-export function AuthButton({ logout = false }: { logout?: boolean }) {
+export function AuthButton({
+  logout = false,
+  callbackUrl = "/workspace",
+}: {
+  logout?: boolean;
+  callbackUrl?: string;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   async function handleClick() {
     setPending(true);
     setError(false);
     try {
-      if (logout) await signOut({ callbackUrl: "/login" });
-      else await signIn("github", { callbackUrl: "/dashboard" });
+      if (logout) await signOut({ callbackUrl: "/" });
+      else await signIn("github", { callbackUrl });
     } catch {
       setError(true);
       setPending(false);

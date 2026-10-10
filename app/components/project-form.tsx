@@ -12,7 +12,7 @@ import {
 import { AuthButton } from "@/app/components/auth-button";
 import { CommitCalendarPreview } from "@/app/components/commit-calendar-preview";
 import type { CommitCalendar } from "@/lib/commit-calendar";
-import { LocalProjectDownload } from "@/app/components/local-project-download";
+import { GitHubPublish } from "@/app/components/github-publish";
 
 type FieldErrors = Partial<Record<keyof ProjectDetails, string[]>>;
 type Availability = {
@@ -36,7 +36,7 @@ export function ProjectForm({
   timeZones: string[];
 }) {
   const [values, setValues] = useState<ProjectDetails>({
-    repositoryName: "git-forge-history",
+    repositoryName: "githubkit-history",
     authorName: name,
     authorEmail: email,
     ...defaults,
@@ -480,7 +480,7 @@ export function ProjectForm({
             </details>
           </div>
           <p className="text-center text-xs text-zinc-500">
-            The calendar updates automatically. Generate a downloadable project
+            The calendar updates automatically. Create your project on GitHub
             when you are happy with the preview.
           </p>
         </fieldset>
@@ -505,22 +505,23 @@ export function ProjectForm({
         </p>
       )}
       {calendar && (
-        <>
-          <CommitCalendarPreview
-            calendar={calendar}
-            onRegenerate={() => {
-              setSeed(crypto.randomUUID());
-              setCalendar(null);
-              setPending(true);
-            }}
-          />
-          <LocalProjectDownload
-            key={JSON.stringify({ values, seed, asOf: calendar.asOf })}
-            input={{ ...values, seed: calendar.seed, asOf: calendar.asOf }}
-            total={calendar.total}
-          />
-        </>
+        <CommitCalendarPreview
+          calendar={calendar}
+          onRegenerate={() => {
+            setSeed(crypto.randomUUID());
+            setCalendar(null);
+            setPending(true);
+          }}
+        />
       )}
+      <GitHubPublish
+        input={
+          calendar
+            ? { ...values, seed: calendar.seed, asOf: calendar.asOf }
+            : null
+        }
+        total={calendar?.total ?? 0}
+      />
     </section>
   );
 }
